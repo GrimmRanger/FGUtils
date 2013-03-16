@@ -88,6 +88,12 @@
     <Folder Include="Menu Classes\" />
     <Folder Include="SwissTableView Demo\" />
     <Folder Include="Utilities\Extensions\" />
+    <Folder Include="Utilities\ClusteringMapView\" />
+    <Folder Include="Utilities\SwissTableView\ExpandingCell\" />
+    <Folder Include="SwissTableView Demo\MessageCell\" />
+    <Folder Include="BL\" />
+    <Folder Include="BL\Model\" />
+    <Folder Include="Utilities\Helpers\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -99,7 +105,6 @@
     <Compile Include="FGUtilsViewController.designer.cs">
       <DependentUpon>FGUtilsViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="Utilities\SwissTableView\SwissTableView.cs" />
     <Compile Include="FGUtilsTableSource.cs" />
     <Compile Include="Menu Classes\MainMenuRow.cs" />
     <Compile Include="Menu Classes\MainMenuRow.designer.cs" />
@@ -111,17 +116,33 @@
     <Compile Include="SwissTableView Demo\SwissTableViewDemoViewController.designer.cs">
       <DependentUpon>SwissTableViewDemoViewController.cs</DependentUpon>
     </Compile>
-    <Compile Include="Utilities\SwissTableView\SwissTableSource.cs" />
     <Compile Include="Utilities\Extensions\NSIndexExtensions.cs" />
     <Compile Include="SwissTableView Demo\SwissTableViewDemoTableSource.cs" />
-    <Compile Include="SwissTableView Demo\ExpandingCell.cs" />
-    <Compile Include="SwissTableView Demo\ExpandingCell.designer.cs" />
+    <Compile Include="Utilities\ClusteringMapView\ClusteringMapView.cs" />
+    <Compile Include="Utilities\ClusteringMapView\AnnotationCluster.cs" />
+    <Compile Include="Utilities\SwissTableView\SwissTableSource.cs" />
+    <Compile Include="Utilities\SwissTableView\SwissTableView.cs" />
+    <Compile Include="Utilities\SwissTableView\ExpandingCell\ExpandingCell.cs" />
+    <Compile Include="SwissTableView Demo\MessageCell\MessageCell.cs" />
+    <Compile Include="SwissTableView Demo\MessageCell\MessageCell.designer.cs">
+      <DependentUpon>MessageCell.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SwissTableView Demo\MessageCell\MessageHeader.cs" />
+    <Compile Include="SwissTableView Demo\MessageCell\MessageHeader.designer.cs">
+      <DependentUpon>MessageHeader.cs</DependentUpon>
+    </Compile>
+    <Compile Include="BL\Model\Message.cs" />
+    <Compile Include="Utilities\Extensions\UIColorExtensions.cs" />
+    <Compile Include="Utilities\Extensions\UIScreenExtensions.cs" />
+    <Compile Include="Utilities\Extensions\UIViewExtensions.cs" />
+    <Compile Include="Utilities\Helpers\LayerHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="FGUtilsViewController.xib" />
     <InterfaceDefinition Include="Menu Classes\MainMenuRow.xib" />
     <InterfaceDefinition Include="SwissTableView Demo\SwissTableViewDemoViewController.xib" />
-    <InterfaceDefinition Include="SwissTableView Demo\ExpandingCell.xib" />
+    <InterfaceDefinition Include="SwissTableView Demo\MessageCell\MessageCell.xib" />
+    <InterfaceDefinition Include="SwissTableView Demo\MessageCell\MessageHeader.xib" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

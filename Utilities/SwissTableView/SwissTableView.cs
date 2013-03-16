@@ -10,19 +10,21 @@ namespace FGUtils
 	[Register("SwissTableView")]
 	public partial class SwissTableView : UITableView
 	{
-		public SwissTableView (RectangleF frame) : base(frame) { Initialize (); }
-		public SwissTableView (IntPtr handle) : base(handle) { Initialize (); }
-		public SwissTableView () : base() { Initialize (); }
+		public SwissTableView (RectangleF frame) : base(frame) {}
+		public SwissTableView (IntPtr handle) : base(handle) {}
+		public SwissTableView () : base() {}
 
 		public new SwissTableSource Source 
 		{ 
 			get { return (SwissTableSource)base.Source; }
-			set { base.Source = value; }
-		}
+			set 
+			{ 
+				base.Source = value; 
 
-		private void Initialize()
-		{
-			InitRefreshControl ();
+				expandedPath = null;
+				LastPoint = PointF.Empty;
+				DraggingView = null;
+			}
 		}
 
 #region Pull to Refresh Functionality
@@ -34,7 +36,11 @@ namespace FGUtils
 
 		public event EventHandler RefreshRequested
 		{
-			add { RefreshControl.ValueChanged += value; }
+			add 
+			{
+				InitRefreshControl();
+				RefreshControl.ValueChanged += value; 
+			}
 			remove { RefreshControl.ValueChanged -= value; }
 		}
 
@@ -47,7 +53,8 @@ namespace FGUtils
 		
 		public void RefreshConcluded()
 		{
-			RefreshControl.EndRefreshing ();
+			 if (RefreshControl != null)
+				RefreshControl.EndRefreshing ();
 		}
 #endregion
 
@@ -69,6 +76,13 @@ namespace FGUtils
 			}
 		}
 
+		public override void TouchesBegan (NSSet touches, UIEvent evt)
+		{
+			base.TouchesBegan (touches, evt);
+
+			LastPoint = ((UITouch)touches.AnyObject).LocationInView (this);
+		}
+
 		public override void TouchesMoved (NSSet touches, UIEvent evt)
 		{
 			base.TouchesMoved(touches, evt);
@@ -79,8 +93,9 @@ namespace FGUtils
 
 				if (DraggingView == null) 
 				{
-					DraggingView = CellAt (IndexPathForRowAtPoint (activePoint));
-					LastPoint = activePoint;
+					NSIndexPath draggingPath = IndexPathForRowAtPoint (activePoint);
+					if (draggingPath != null)
+						DraggingView = CellAt (draggingPath);
 				}
 
 				if (DraggingView != null && DraggingView is UITableViewCell) 
@@ -91,9 +106,9 @@ namespace FGUtils
 					float y = DraggingView.Frame.Y;
 				
 					DraggingView.Frame = new RectangleF (new PointF(x, y) , DraggingView.Frame.Size);
-				
-					LastPoint = activePoint;
 				}
+
+				LastPoint = activePoint;
 			}
 		}
 		
@@ -119,7 +134,9 @@ namespace FGUtils
 			} 
 			else if (ExpandCollapseEnabled) 
 			{
-				ExpandCollapse(IndexPathForRowAtPoint (((UITouch)touches.AnyObject).LocationInView(this)));
+				NSIndexPath path = IndexPathForRowAtPoint (((UITouch)touches.AnyObject).LocationInView(this));
+				if (path != null)
+					ExpandCollapse(path);
 			}
 		}
 
@@ -179,67 +196,75 @@ namespace FGUtils
 
 		private NSIndexPath expandedPath = null;
 
+		public void ToggleExpanded(NSIndexPath indexPath, bool animated, UITableViewScrollPosition position)
+		{
+			ScrollToRow (indexPath, position, animated);
+			ExpandCollapse (indexPath);
+		}
+
 		private void ExpandCollapse(NSIndexPath indexPath)
 		{
-			bool shouldExpand = true;
-			bool shouldCollapse = false;
-
-			if (expandedPath != null) 
+			if (indexPath != null) 
 			{
-				shouldCollapse = true;
-
-				if (expandedPath.Equals(indexPath))
-					shouldExpand = false;
-			}
-
-			if (shouldExpand && shouldCollapse) 
-			{
-				Collapse (expandedPath, () => {
-					Expand (indexPath); });
-			} 
-			else 
-			{
-				if (shouldCollapse)
-					Collapse(expandedPath, null);
-
-				if (shouldExpand)
-					Expand (indexPath);
+				bool shouldExpand = true;
+				bool shouldCollapse = false;
+				
+				if (expandedPath != null) 
+				{
+					shouldCollapse = true;
+					
+					if (expandedPath.Equals(indexPath))
+						shouldExpand = false;
+				}
+				
+				if (shouldExpand && shouldCollapse) 
+				{
+					Collapse (expandedPath, () => {
+						Expand (indexPath); });
+				} 
+				else 
+				{
+					if (shouldCollapse)
+						Collapse(expandedPath, null);
+					
+					if (shouldExpand)
+						Expand (indexPath);
+				}
 			}
 		}
 
 		private void Expand(NSIndexPath path)
 		{
 			CATransaction.Begin ();
-
+			
 			CATransaction.CompletionBlock = () => {
 				Source.DidExpandCell(this, path);
 			};
-
+			
 			expandedPath = path;
 			Source.WillExpandCell (this, path);
-			ReloadRows (new NSIndexPath[]{ path }, UITableViewRowAnimation.None);
 			BeginUpdates ();
 			EndUpdates ();
-
+			
 			CATransaction.Commit ();
 		}
 		
 		private void Collapse(NSIndexPath path, Action completion)
 		{
 			CATransaction.Begin ();
-
+			
 			CATransaction.CompletionBlock = () => {
 				Source.DidCollapseCell (this, path);
-
+				
 				if (completion != null)
 				completion.Invoke ();
 			};
-
+			
 			expandedPath = null;
 			Source.WillCollapseCell (this, path);
 			BeginUpdates ();
 			EndUpdates ();
-
+			
 			CATransaction.Commit ();
 		}
 #endregion

@@ -8,24 +8,24 @@ using MonoTouch.Foundation;
 
 namespace FGUtils
 {
-	partial class ExpandingCell
+	partial class MessageCell
 	{
 		[Outlet]
-		MonoTouch.UIKit.UILabel Title { get; set; }
+		MonoTouch.UIKit.UIView Header { get; set; }
 
 		[Outlet]
-		MonoTouch.UIKit.UILabel Detail { get; set; }
+		MonoTouch.UIKit.UIView Content { get; set; }
 		
 		void ReleaseDesignerOutlets ()
 		{
-			if (Title != null) {
-				Title.Dispose ();
-				Title = null;
+			if (Header != null) {
+				Header.Dispose ();
+				Header = null;
 			}
 
-			if (Detail != null) {
-				Detail.Dispose ();
-				Detail = null;
+			if (Content != null) {
+				Content.Dispose ();
+				Content = null;
 			}
 		}
 	}

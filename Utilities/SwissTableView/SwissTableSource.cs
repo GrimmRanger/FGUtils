@@ -25,7 +25,7 @@ namespace FGUtils
 				}
 			}
 
-			// Descendent class in charge of updating backing data
+			// Inheriting class in charge of updating backing data
 			// Example
 			// Data[indexPath.Section].RemoveAt(indexPath.Row);
 		}
@@ -39,14 +39,24 @@ namespace FGUtils
 			ExpandedPath = path;
 		}
 		
-		public virtual void DidExpandCell(UITableView tableView, NSIndexPath path) {}
+		public virtual void DidExpandCell(UITableView tableView, NSIndexPath path) 
+		{
+			ExpandingCell cell = (ExpandingCell)tableView.CellAt (path);
+			if (cell != null)
+				cell.Expand ();
+		}
 		
 		public virtual void WillCollapseCell(UITableView tableView, NSIndexPath path)
 		{
 			ExpandedPath = null;
 		}
 		
-		public virtual void DidCollapseCell(UITableView tableView, NSIndexPath path) {}
+		public virtual void DidCollapseCell(UITableView tableView, NSIndexPath path) 
+		{
+			ExpandingCell cell = (ExpandingCell)tableView.CellAt (path);
+			if (cell != null)
+				cell.Collapse ();
+		}
 #endregion
 
 #region TableView Helper Methods
