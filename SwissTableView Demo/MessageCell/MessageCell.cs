@@ -8,7 +8,7 @@ using System.Linq;
 namespace FGUtils
 {
 	[Register("MessageCell")]
-	public partial class MessageCell : ExpandingCell
+	public partial class MessageCell : UITableViewCell
 	{
 		public MessageCell (string ReuseId) : base(UITableViewCellStyle.Default, ReuseId) {}
 		public MessageCell (IntPtr handle) : base(handle) {}
@@ -84,17 +84,5 @@ namespace FGUtils
 				SetContent(_webView);
 			}
 		}
-
-#region ExpandingCell Methods
-		public override void Expand ()
-		{
-			Frame = new RectangleF (Frame.X, Frame.Y, Frame.Width, ExpandedHeight);
-		}
-
-		public override void Collapse ()
-		{
-			Frame = new RectangleF (Frame.X, Frame.Y, Frame.Width, CollapsedHeight);
-		}
-#endregion
 	}
 }
