@@ -94,6 +94,9 @@
     <Folder Include="BL\Model\" />
     <Folder Include="Utilities\Helpers\" />
     <Folder Include="Main Page\" />
+    <Folder Include="Content\" />
+    <Folder Include="Content\Images\" />
+    <Folder Include="Content\Images\Delete\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
@@ -144,4 +147,10 @@
     <InterfaceDefinition Include="Main Page\FGUtilsViewController.xib" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <BundleResource Include="Content\Images\Delete\delete.png" />
+    <BundleResource Include="Content\Images\Delete\delete%402x.png" />
+    <BundleResource Include="Content\Images\Delete\deleteGray.png" />
+    <BundleResource Include="Content\Images\Delete\deleteGray%402x.png" />
+  </ItemGroup>
 </Project>
