@@ -52,6 +52,7 @@ namespace FGUtils
 			TableView.ExpandCollapseEnabled = true;
 			
 			TableView.BackgroundColor = UIColor.FromRGBA (25, 27, 28, 255);
+			TableView.ScrollEnabled = false;
 		}
 		
 		private void RefreshData()

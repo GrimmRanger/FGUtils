@@ -62,6 +62,7 @@ namespace FGUtils
 		public bool SwipeToDeleteEnabled = false;
 
 		private UITableViewCell DraggingView;
+		private UIView Accent;
 		private PointF LastPoint;
 
 		private float _deleteThreshold = 0.5f;
@@ -75,6 +76,8 @@ namespace FGUtils
 					_deleteThreshold = value;
 			}
 		}
+
+		private float DelThresh { get { return DraggingView.Frame.Width * _deleteThreshold; } }
 
 		public override void TouchesBegan (NSSet touches, UIEvent evt)
 		{
@@ -95,8 +98,13 @@ namespace FGUtils
 				{
 					NSIndexPath draggingPath = IndexPathForRowAtPoint (activePoint);
 					if (draggingPath != null)
+					{
 						DraggingView = CellAt (draggingPath);
+						Accent = new AccentView(DraggingView, _deleteThreshold);
+						this.AddSubview(Accent);
+					}
 				}
+			
 
 				if (DraggingView != null && DraggingView is UITableViewCell) 
 				{
@@ -104,8 +112,11 @@ namespace FGUtils
 				
 					float x = DraggingView.Frame.X + delX;
 					float y = DraggingView.Frame.Y;
-				
 					DraggingView.Frame = new RectangleF (new PointF(x, y) , DraggingView.Frame.Size);
+
+					float accentX = x >= 0 ? x - Accent.Frame.Width : DraggingView.Frame.Right;
+					float accentY = DraggingView.Frame.Y;
+					Accent.Frame = new RectangleF(accentX, accentY, Accent.Frame.Width, Accent.Frame.Height);
 				}
 
 				LastPoint = activePoint;
@@ -120,6 +131,9 @@ namespace FGUtils
 			{
 				Swiped (DraggingView);
 				DraggingView = null;
+
+				Accent.RemoveFromSuperview();
+				Accent = null;
 			} 
 		}
 		
@@ -131,6 +145,9 @@ namespace FGUtils
 			{
 				Swiped (DraggingView);
 				DraggingView = null;
+
+				Accent.RemoveFromSuperview();
+				Accent = null;
 			} 
 			else if (ExpandCollapseEnabled) 
 			{
@@ -187,6 +204,99 @@ namespace FGUtils
 					if (expandedPath.GreaterThan(indexPath))
 						expandedPath = Source.DecrementIndex(this, expandedPath);
 				}
+			}
+		}
+
+		private class AccentView : UIView
+		{
+			private const float AccentAlphaInitial = 0.5f;
+			private const float AccentAlphaFinal = 1;
+
+			UIImageView ImageView;
+			float _delThresh;
+
+			private bool _canDelete = false;
+			private bool CanDelete {
+				get { return _canDelete; }
+				set
+				{
+					if (value != _canDelete)
+					{
+						Console.WriteLine("Threshold Crossed");
+						_canDelete = value;
+						if(_canDelete)
+						{
+							ImageView.Image = UIImage.FromBundle("/Content/Images/Delete/delete.png");
+						}
+						else 
+						{
+							ImageView.Image = UIImage.FromBundle("/Content/Images/Delete/deleteGray.png");
+						}
+					}
+				}
+			}
+
+			public AccentView (UIView view, float delThreshold) : base(view.Bounds)
+			{
+				_delThresh = delThreshold;
+
+				this.BackgroundColor = UIColor.FromRGBA(100, 30, 30, 255);
+				this.Alpha = 0.5f;
+
+				ImageView = new UIImageView(UIImage.FromBundle("/Content/Images/Delete/deleteGray.png"));
+				this.AddSubview(ImageView);
+			}
+
+			public override RectangleF Frame {
+				get { return base.Frame; }
+				set 
+				{
+					Update(base.Frame, value);
+					base.Frame = value;
+				}
+			}
+
+			private void Update(RectangleF oldFrame, RectangleF newFrame)
+			{
+				UpdateImageView(oldFrame, newFrame);
+				UpdateAlpha();
+			}
+
+			private void UpdateImageView(RectangleF oldFrame, RectangleF newFrame)
+			{
+				if (ImageView != null) 
+				{
+					UpdateFrame (oldFrame, newFrame);
+					UpdateImageState (oldFrame, newFrame);
+				}
+			}
+
+			private void UpdateFrame(RectangleF oldFrame, RectangleF newFrame)
+			{
+				float imageX = Frame.X < 0 ? this.Frame.Width - ImageView.Frame.Width - 10 : 10;
+				float imageY = (this.Frame.Height - ImageView.Frame.Height) / 2;
+				ImageView.Frame = new RectangleF (imageX, imageY, ImageView.Frame.Width, ImageView.Frame.Height);
+			}
+
+			private void UpdateImageState(RectangleF oldFrame, RectangleF newFrame)
+			{
+				if (Frame.X > 0) 
+				{
+					CanDelete = (Frame.Width - Frame.X) > (Frame.Width * _delThresh);
+				}
+				else 
+				{
+					CanDelete = Frame.Right > (Frame.Width * _delThresh);
+				}
+			}
+
+			private void UpdateAlpha()
+			{
+				float adjustment = Frame.X > 0 ?
+					(Frame.Width - Frame.X) / (_delThresh * Frame.Width) :
+						Frame.Right / (_delThresh * Frame.Width);
+				Alpha = AccentAlphaInitial + (AccentAlphaFinal - AccentAlphaInitial) * adjustment;
+
 			}
 		}
 #endregion
