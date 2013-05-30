@@ -104,7 +104,6 @@ namespace FGUtils
 						this.AddSubview(Accent);
 					}
 				}
-			
 
 				if (DraggingView != null && DraggingView is UITableViewCell) 
 				{

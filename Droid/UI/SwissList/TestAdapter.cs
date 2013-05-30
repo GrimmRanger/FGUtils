@@ -36,15 +36,21 @@ namespace FGUtilsDroid
 		{	
 			View view = convertView;
 
-			if (view == null)
+			if (view == null) 
 			{
-				LayoutInflater inflator = (LayoutInflater)_context.GetSystemService(Context.LayoutInflaterService);
-				view = inflator.Inflate(Resource.Layout.ExpandCollapseCell, null);
+				LayoutInflater inflator = (LayoutInflater)_context.GetSystemService (Context.LayoutInflaterService);
+				view = inflator.Inflate (Resource.Layout.ExpandCollapseCell, null, false);
 			}
 
 			EnableExpandCollapse(view, position);
+			EnableSwipeToDelete(view, position);
 
 			return view;
+		}
+
+		protected override View GetSwipeToDeleteView (View parent)
+		{
+			return parent.FindViewById (Resource.Id.swipeView);
 		}
 
 		protected override View GetExpandableView (View parent)
