@@ -17,18 +17,22 @@ namespace FGUtilsDroid
 	public interface ISwipeViewDelegate
 	{
 		void PerformClick(View view, int position);
+		void PerformDelete (View view, int position);
 	}
 
 	public abstract class SwissListAdapter : BaseAdapter, ISwipeViewDelegate
 	{
+#region Abstract Methods
+		protected abstract View GetSwipeToDeleteView (View parent);
+		protected abstract View GetExpandableView(View parent);
+		protected abstract void DeleteRowRequested (int position);
+#endregion
+
+#region General Configuration
 		private bool ExpandCollapseEnabled { get; set; }
 		private bool SwipeToDeleteEnabled { get; set; }
 
 		protected bool _isAnimating = false;
-
-#region Abstract Methods
-		protected abstract View GetSwipeToDeleteView (View parent);
-		protected abstract View GetExpandableView(View parent);
 #endregion
 
 #region SwipeToDelete Configuration
@@ -130,8 +134,12 @@ namespace FGUtilsDroid
 				{
 					Animation swipeEnd = SwipeEndAnimation ();
 					swipeEnd.AnimationEnd += delegate(object sender, Animation.AnimationEndEventArgs e) {
-						_swipeView.StartAnimation(new SwipeFinishAnimation(_swipeView));
-						_swipeView = null;
+						Animation finishAnimation = new SwipeFinishAnimation(_swipeView);
+						finishAnimation.AnimationEnd += delegate {
+							_delegate.PerformDelete(_swipeView, _position);
+							_swipeView = null;
+						};
+						_swipeView.StartAnimation(finishAnimation);
 					};
 					view.StartAnimation (swipeEnd);
 				}
@@ -279,7 +287,8 @@ namespace FGUtilsDroid
 
 			if (type == ExpandCollapseAnimation.ExpandCollapseAnimationType.Expand)
 			{
-				viewAnimation.AnimationEnd += delegate(object sender, Animation.AnimationEndEventArgs e) {
+				viewAnimation.AnimationEnd += delegate(object sender, Animation.AnimationEndEventArgs e) 
+				{
 					_expandedView = parent;
 					_expandedViewPosition = position;
 					_isAnimating = false;
@@ -289,7 +298,8 @@ namespace FGUtilsDroid
 				{
 					View expandSubView = GetExpandableView(_expandedView);
 					expandedViewAnimation = ECAnimation(expandSubView, ExpandCollapseAnimation.ExpandCollapseAnimationType.Collpase);
-					expandedViewAnimation.AnimationEnd += delegate(object sender, Animation.AnimationEndEventArgs e) {
+					expandedViewAnimation.AnimationEnd += delegate(object sender, Animation.AnimationEndEventArgs e) 
+					{
 						_expandedView = null;
 						_expandedViewPosition = -1;
 						view.StartAnimation(viewAnimation);
@@ -303,13 +313,25 @@ namespace FGUtilsDroid
 			}
 			else
 			{
-				viewAnimation.AnimationEnd += delegate(object sender, Animation.AnimationEndEventArgs e) {
+				viewAnimation.AnimationEnd += delegate(object sender, Animation.AnimationEndEventArgs e) 
+				{
 					_expandedView = null;
 					_expandedViewPosition = -1;
 					_isAnimating = false;
 				};
 				view.StartAnimation(viewAnimation);
 			}
+		}
+
+		public void PerformDelete(View view, int position)
+		{
+			if (position == _expandedViewPosition) 
+			{
+				_expandedViewPosition = -1;
+				_expandedView = null;
+			}
+
+			DeleteRowRequested (position);
 		}
 #endregion
 

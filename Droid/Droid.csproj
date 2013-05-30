@@ -51,7 +51,6 @@
     <Compile Include="UI\Main\MainActivity.cs" />
     <Compile Include="UI\SwissList\SwissListActivity.cs" />
     <Compile Include="UI\Main\MainAdapter.cs" />
-    <Compile Include="UI\TranslateLayout\TranslateLayout.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
@@ -69,6 +68,5 @@
     <Folder Include="UI\" />
     <Folder Include="UI\SwissList\" />
     <Folder Include="UI\Main\" />
-    <Folder Include="UI\TranslateLayout\" />
   </ItemGroup>
 </Project>

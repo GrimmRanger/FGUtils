@@ -18,8 +18,9 @@ namespace FGUtilsDroid
 
 		public TestAdapter(Context context) : base() { _context = context; }
 
+		private int _count = 40;
 		public override int Count {
-			get { return 40; }
+			get { return _count; }
 		}
 
 		public override Java.Lang.Object GetItem (int position)
@@ -56,6 +57,14 @@ namespace FGUtilsDroid
 		protected override View GetExpandableView (View parent)
 		{
 			return parent.FindViewById(Resource.Id.expandView);
+		}
+
+		protected override void DeleteRowRequested(int position)
+		{
+			if (_count > 0)
+				_count--;
+
+			NotifyDataSetChanged ();
 		}
 	}
 }
