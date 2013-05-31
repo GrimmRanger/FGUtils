@@ -1,3 +1,25 @@
+/** 
+	Copyright (c) 2013 Frank J. Grimmer II
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included in
+	all copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+	THE SOFTWARE.
+**/
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,14 +51,20 @@ namespace FGUtilsDroid
 #endregion
 
 #region General Configuration
-		private bool ExpandCollapseEnabled { get; set; }
-		private bool SwipeToDeleteEnabled { get; set; }
+		protected bool ExpandCollapseEnabled { get; set; }
+		protected bool SwipeToDeleteEnabled { get; set; }
 
 		protected bool _isAnimating = false;
 #endregion
 
 #region SwipeToDelete Configuration
 		protected View _swipeView;
+
+		private float _swipeThresh = 25;
+		private float _firstX;
+		private float _lastX;
+
+		private float Offset { get { return _lastX - _firstX; } }
 
 		private float _deleteThreshold = 0.5f;
 		public float DeleteThreshold 
@@ -52,14 +80,53 @@ namespace FGUtilsDroid
 
 		private float DelThresh { get { return _swipeView.MeasuredWidth * _deleteThreshold; } }
 
-		protected void EnableSwipeToDelete(View view, int position)
+		private bool ShouldDeleteSwipeView()
 		{
-			EnableExpandCollapse (view, position);
-			view.SetOnTouchListener (new SwissTouchListener(this, position));
+			bool shouldDelete = false;
+			if (_swipeView != null) 
+			{
+				return Math.Abs (Offset) > DelThresh;
+			}
+			return shouldDelete;
+		}
+
+		private int SwipeAlpha()
+		{
+			return (int)(255 * (1 - (Offset/_swipeView.Width)));
+		}
+
+		protected void ActivateSwissListItem(View view, int position)
+		{
+			if (ExpandCollapseEnabled)
+				EnableExpandCollapse (view, position);
+
+			if (ExpandCollapseEnabled || SwipeToDeleteEnabled)
+				view.SetOnTouchListener (new SwissTouchListener(this, position));
+		}
+
+		public void PerformDelete(View view, int position)
+		{
+			if (ExpandCollapseEnabled)
+			{
+				if (position == _expandedViewPosition) 
+				{
+					_expandedViewPosition = -1;
+					_expandedView = null;
+				}
+				else if (position < _expandedViewPosition) 
+				{
+					_expandedViewPosition--;
+				}
+			}
+
+			DeleteRowRequested (position);
+
+			_swipeView.ClearAnimation ();
+			_swipeView = null;
 		}
 #endregion
 
-#region ISwissTouchDelegate
+#region SwissTouchListener
 		internal class SwissTouchListener : Java.Lang.Object, View.IOnTouchListener
 		{
 			public SwissTouchListener(ISwissTouchDelegate del, int position) : base() 
@@ -89,71 +156,69 @@ namespace FGUtilsDroid
 				return true;
 			}
 		}
+#endregion
 
-		private float _swipeThresh = 25;
-		private float _firstX;
-		private float _lastX;
-
-		private float Offset { get { return _lastX - _firstX; } }
-
-		private bool ShouldDeleteSwipeView()
-		{
-			bool shouldDelete = false;
-			if (_swipeView != null) 
-			{
-				return Math.Abs (Offset) > DelThresh;
-			}
-			return shouldDelete;
-		}
-
+#region ISwissTouchDelegate
 		public void OnTouchDown (View view, MotionEvent evt, int position)
 		{
-			_firstX = evt.RawX;
-			_lastX = _firstX;
+			if (SwipeToDeleteEnabled)
+			{
+				_firstX = evt.RawX;
+				_lastX = _firstX;
+			}
 		}
 
 		public void OnTouchMove (View view, MotionEvent evt, int position)
 		{
-			float activeX = evt.RawX;
+			if (SwipeToDeleteEnabled)
+			{
+				float activeX = evt.RawX;
 
-			if (Math.Abs (activeX - _firstX) > _swipeThresh) {
+				if (Math.Abs (activeX - _firstX) > _swipeThresh) {
 
-				view.Parent.RequestDisallowInterceptTouchEvent (true);
+					view.Parent.RequestDisallowInterceptTouchEvent (true);
 
-				if (_swipeView == null) {
-					_swipeView = view as View;
+					if (_swipeView == null) {
+						_swipeView = view as View;
+					}
+
+					if (_swipeView != null) 
+					{
+						_swipeView.StartAnimation (SwipeDragAnimation(activeX));
+					}
 				}
 
-				if (_swipeView != null) 
-				{
-					view.StartAnimation (SwipeDragAnimation(activeX));
-				}
+				_lastX = activeX;
 			}
-
-			_lastX = activeX;
 		}
 
 		public void OnTouchUp (View view, MotionEvent evt, int position)
 		{
-			if (_swipeView == null) 
+			if (ExpandCollapseEnabled && _swipeView == null) 
 			{
 				PerformClick (view, position);
 			}
-			else 
+			else if (SwipeToDeleteEnabled)
 			{
 				Animation swipeEnd = SwipeEndAnimation ();
 				if (ShouldDeleteSwipeView ()) 
 				{
 					swipeEnd.AnimationEnd += delegate(object sender, Animation.AnimationEndEventArgs e) 
 					{
-						PerformDelete(_swipeView, position);
+						PerformDelete (_swipeView, position);
 					};
+				} 
+				else 
+				{
+					_swipeView = null;
 				}
 
 				view.StartAnimation (swipeEnd);
 			}
 		}
+#endregion 
 
+#region Swipe Animations
 		private Animation SwipeDragAnimation(float activeX)
 		{
 			float delX = activeX - _lastX;
@@ -283,24 +348,6 @@ namespace FGUtilsDroid
 				};
 				view.StartAnimation(viewAnimation);
 			}
-		}
-
-		public void PerformDelete(View view, int position)
-		{
-			if (position == _expandedViewPosition) 
-			{
-				_expandedViewPosition = -1;
-				_expandedView = null;
-			}
-			else if (position < _expandedViewPosition) 
-			{
-				_expandedViewPosition--;
-			}
-
-			DeleteRowRequested (position);
-
-			_swipeView.ClearAnimation ();
-			_swipeView = null;
 		}
 #endregion
 

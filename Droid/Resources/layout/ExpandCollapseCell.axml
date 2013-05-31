@@ -3,19 +3,30 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
-    <TextView
-        android:id="@+id/title"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:text="big, long title" />
+        android:layout_height="wrap_content"
+        android:background="@drawable/expand_collapse_cell_background">
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:paddingLeft="10dp"
+            android:gravity="center_vertical"
+            android:textColor="#FF000000"
+            android:text="big, long title" />
+    </LinearLayout>
     <LinearLayout
         android:id="@+id/expandView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:background="@drawable/expand_collapse_background">
         <TextView
             android:id="@+id/detail"
             android:layout_width="match_parent"
             android:layout_height="40dp"
+            android:paddingLeft="20dp"
+            android:gravity="center_vertical"
             android:text="impressiviely concise detail" />
     </LinearLayout>
 </LinearLayout>

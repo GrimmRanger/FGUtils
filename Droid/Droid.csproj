@@ -62,6 +62,9 @@
     <AndroidResource Include="Resources\drawable\Icon.png" />
     <AndroidResource Include="Resources\layout\ExpandCollapseCell.axml" />
     <AndroidResource Include="Resources\layout\SwissList.axml" />
+    <AndroidResource Include="Resources\drawable\expand_collapse_cell_background.xml" />
+    <AndroidResource Include="Resources\values\Color.xml" />
+    <AndroidResource Include="Resources\drawable\expand_collapse_background.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
   <ItemGroup>

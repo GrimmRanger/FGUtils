@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<color name="expand_collapse_cell_background_top">#FFCCCCCC</color>
+	<color name="expand_collapse_cell_background_bot">#FF999999</color>
+	<color name="expand_collapse_background_top">#FF777777</color>
+	<color name="expand_collapse_background_bot">#FF444444</color>
+</resources>

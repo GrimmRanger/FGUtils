@@ -16,12 +16,16 @@ namespace FGUtilsDroid
 	{
 		Context _context;
 
-		public TestAdapter(Context context) : base() { _context = context; }
+		public TestAdapter(Context context) : base() 
+		{ 
+			_context = context; 
+
+			SwipeToDeleteEnabled = true;
+			ExpandCollapseEnabled = true;
+		}
 
 		private int _count = 40;
-		public override int Count {
-			get { return _count; }
-		}
+		public override int Count { get { return _count; } }
 
 		public override Java.Lang.Object GetItem (int position)
 		{
@@ -46,7 +50,7 @@ namespace FGUtilsDroid
 			TextView title = view.FindViewById (Resource.Id.title) as TextView;
 			title.Text = string.Format ("row {0}", position);
 
-			EnableSwipeToDelete(view, position);
+			ActivateSwissListItem(view, position);
 
 			return view;
 		}
