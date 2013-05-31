@@ -13,17 +13,17 @@ using Android.Views.Animations;
 using System.Drawing;
 
 namespace FGUtilsDroid
-{
-	public interface ISwipeViewDelegate
+{	
+	public interface ISwissTouchDelegate
 	{
-		void PerformClick(View view, int position);
-		void PerformDelete (View view, int position);
+		void OnTouchDown (View view, MotionEvent evt, int position);
+		void OnTouchMove (View view, MotionEvent evt, int position);
+		void OnTouchUp (View view, MotionEvent evt, int position);
 	}
 
-	public abstract class SwissListAdapter : BaseAdapter, ISwipeViewDelegate
+	public abstract class SwissListAdapter : BaseAdapter, ISwissTouchDelegate
 	{
 #region Abstract Methods
-		protected abstract View GetSwipeToDeleteView (View parent);
 		protected abstract View GetExpandableView(View parent);
 		protected abstract void DeleteRowRequested (int position);
 #endregion
@@ -54,171 +54,141 @@ namespace FGUtilsDroid
 
 		protected void EnableSwipeToDelete(View view, int position)
 		{
-			View swipeView = GetSwipeToDeleteView (view);
-			swipeView.SetOnTouchListener (new SwipeViewOnTouchListener(this, position, _deleteThreshold));
+			EnableExpandCollapse (view, position);
+			view.SetOnTouchListener (new SwissTouchListener(this, position));
 		}
+#endregion
 
-		internal class SwipeViewOnTouchListener : Java.Lang.Object, View.IOnTouchListener
+#region ISwissTouchDelegate
+		internal class SwissTouchListener : Java.Lang.Object, View.IOnTouchListener
 		{
-			public SwipeViewOnTouchListener(ISwipeViewDelegate del, int position ,float delThresh) : base() 
+			public SwissTouchListener(ISwissTouchDelegate del, int position) : base() 
 			{
 				_delegate = del;
 				_position = position;
-				_delThresh = delThresh;
 			}
 
-			private ISwipeViewDelegate _delegate;
+			private ISwissTouchDelegate _delegate;
 			private int _position;
-			private float _swipeThresh = 25;
-			private float _delThresh;
-			private View _swipeView;
-			private float _firstX;
-			private float _lastX;
-
-			private float Offset { get { return _lastX - _firstX; } }
 
 			public bool OnTouch(View view, MotionEvent evt)
 			{
 				switch (evt.Action) 
 				{
-				case MotionEventActions.Move:
-					OnTouchMove (view, evt);
+					case MotionEventActions.Move:
+					_delegate.OnTouchMove (view, evt, _position);
 					break;
-				case MotionEventActions.Up:
-					OnTouchUp (view, evt);
+					case MotionEventActions.Up:
+					_delegate.OnTouchUp (view, evt, _position);
 					break;
-				default:
-				case MotionEventActions.Down:
-					OnTouchDown (view, evt);
+					case MotionEventActions.Down:
+					_delegate.OnTouchDown (view, evt, _position);
 					break;
 				}
 
 				return true;
 			}
+		}
 
-			private void OnTouchDown(View view, MotionEvent evt)
+		private float _swipeThresh = 25;
+		private float _firstX;
+		private float _lastX;
+
+		private float Offset { get { return _lastX - _firstX; } }
+
+		private bool ShouldDeleteSwipeView()
+		{
+			bool shouldDelete = false;
+			if (_swipeView != null) 
 			{
-				_firstX = evt.RawX;
-				_lastX = _firstX;
+				return Math.Abs (Offset) > DelThresh;
+			}
+			return shouldDelete;
+		}
+
+		public void OnTouchDown (View view, MotionEvent evt, int position)
+		{
+			_firstX = evt.RawX;
+			_lastX = _firstX;
+		}
+
+		public void OnTouchMove (View view, MotionEvent evt, int position)
+		{
+			float activeX = evt.RawX;
+
+			if (Math.Abs (activeX - _firstX) > _swipeThresh) {
+
+				view.Parent.RequestDisallowInterceptTouchEvent (true);
+
+				if (_swipeView == null) {
+					_swipeView = view as View;
+				}
+
+				if (_swipeView != null) 
+				{
+					view.StartAnimation (SwipeDragAnimation(activeX));
+				}
 			}
 
-			private void OnTouchMove(View view, MotionEvent evt)
+			_lastX = activeX;
+		}
+
+		public void OnTouchUp (View view, MotionEvent evt, int position)
+		{
+			if (_swipeView == null) 
 			{
-				float activeX = evt.RawX;
-
-				if (Math.Abs (activeX - _firstX) > _swipeThresh) {
-
-					view.Parent.RequestDisallowInterceptTouchEvent (true);
-
-					if (_swipeView == null) {
-						_swipeView = view as View;
-					}
-
-					if (_swipeView != null) 
+				PerformClick (view, position);
+			}
+			else 
+			{
+				Animation swipeEnd = SwipeEndAnimation ();
+				if (ShouldDeleteSwipeView ()) 
+				{
+					swipeEnd.AnimationEnd += delegate(object sender, Animation.AnimationEndEventArgs e) 
 					{
-						view.StartAnimation (SwipeDragAnimation(activeX));
-					}
-				}
-
-				_lastX = activeX;
-			}
-
-			private void OnTouchUp(View view, MotionEvent evt)
-			{
-				if (_swipeView == null) 
-				{
-					View viewParent = view.Parent as View;
-					_delegate.PerformClick (viewParent, _position);
-				}
-				else 
-				{
-					Animation swipeEnd = SwipeEndAnimation ();
-					swipeEnd.AnimationEnd += delegate(object sender, Animation.AnimationEndEventArgs e) {
-						Animation finishAnimation = new SwipeFinishAnimation(_swipeView);
-						finishAnimation.AnimationEnd += delegate {
-							_delegate.PerformDelete(_swipeView, _position);
-							_swipeView = null;
-						};
-						_swipeView.StartAnimation(finishAnimation);
+						PerformDelete(_swipeView, position);
 					};
-					view.StartAnimation (swipeEnd);
-				}
-			}
-
-			private Animation SwipeDragAnimation(float activeX)
-			{
-				float delX = activeX - _lastX;
-
-				Animation translate = new TranslateAnimation (Offset, Offset + delX, 0, 0);
-				translate.Duration = 0;
-				translate.FillAfter = true;
-
-				return translate;
-			}
-
-			private Animation SwipeEndAnimation()
-			{
-				TranslateAnimation translate = null;
-
-				float offset = Math.Abs (Offset);
-
-				if (offset > (_delThresh * _swipeView.Width)) 
-				{
-					if (_lastX > _firstX) 
-					{
-						translate = new TranslateAnimation (Offset, _swipeView.Width, 0, 0);
-					}
-					else 
-					{
-						translate = new TranslateAnimation (Offset, -_swipeView.Width, 0, 0);
-					}
-				}
-				else 
-				{
-					translate = new TranslateAnimation (Offset, 0, 0, 0);
 				}
 
-				translate.Duration = 330;
-				translate.FillAfter = true;
-
-				return translate;
+				view.StartAnimation (swipeEnd);
 			}
 		}
 
-		internal class SwipeFinishAnimation : Animation
+		private Animation SwipeDragAnimation(float activeX)
 		{
-			private View _animationView;
+			float delX = activeX - _lastX;
 
-			private int _endHeight;
-			private LinearLayout.LayoutParams _layoutParams;
+			Animation translate = new TranslateAnimation (Offset, Offset + delX, 0, 0);
+			translate.Duration = 0;
+			translate.FillAfter = true;
 
-			public SwipeFinishAnimation(View view) : base() { Initialize(view); }
+			return translate;
+		}
 
-			private void Initialize(View view)
+		private Animation SwipeEndAnimation()
+		{
+			TranslateAnimation translate = null;
+
+			if (ShouldDeleteSwipeView()) 
 			{
-				_animationView = view;
-
-				_endHeight = view.MeasuredHeight;
-				_layoutParams = ((LinearLayout.LayoutParams)view.LayoutParameters);
-			}
-
-			protected override void ApplyTransformation (float interpolatedTime, Transformation t)
-			{
-				base.ApplyTransformation (interpolatedTime, t);
-
-				if (interpolatedTime < 1)
+				if (_lastX > _firstX) 
 				{
-					_layoutParams.BottomMargin = -(int)(_endHeight * interpolatedTime);
-					_animationView.RequestLayout();
-					Console.WriteLine (string.Format("applyTransformation bm: {0}", _layoutParams.BottomMargin));
+					translate = new TranslateAnimation (Offset, _swipeView.Width, 0, 0);
 				}
-				else
+				else 
 				{
-					_layoutParams.BottomMargin = -_endHeight;
-					_animationView.Visibility = ViewStates.Gone;
-					_animationView.RequestLayout();
+					translate = new TranslateAnimation (Offset, -_swipeView.Width, 0, 0);
 				}
 			}
+			else 
+			{
+				translate = new TranslateAnimation (Offset, 0, 0, 0);
+			}
+
+			translate.Duration = 330;
+			translate.FillAfter = true;
+
+			return translate;
 		}
 #endregion
 
@@ -259,14 +229,6 @@ namespace FGUtilsDroid
 				expandingView.Visibility = ViewStates.Gone;
 				pms.BottomMargin = -expandingView.MeasuredHeight;
 			}
-
-//			parent.SetOnTouchListener (new ExpandViewOnTouchListener(new Action(() => {
-//				PerformClick(parent, position);
-//			})));
-
-			parent.SetOnClickListener (new ExpandViewOnClickListener(new Action(() => { 
-				PerformClick(parent, position);
-			})));
 		}
 
 		public void PerformClick(View parent, int position)
@@ -330,46 +292,15 @@ namespace FGUtilsDroid
 				_expandedViewPosition = -1;
 				_expandedView = null;
 			}
+			else if (position < _expandedViewPosition) 
+			{
+				_expandedViewPosition--;
+			}
 
 			DeleteRowRequested (position);
-		}
-#endregion
 
-#region ExpandView OnTouchListener
-		internal class ExpandViewOnTouchListener : Java.Lang.Object, View.IOnTouchListener
-		{
-			public ExpandViewOnTouchListener(Action action) : base() { _action = action; }
-
-			private Action _action;
-
-			public bool OnTouch(View view, MotionEvent evt)
-			{
-				switch (evt.Action) 
-				{
-				case MotionEventActions.Up:
-					_action.Invoke ();
-					break;
-				}
-
-				return true;
-			}
-		}
-#endregion
-
-#region ExpandView OnClickListener
-		internal class ExpandViewOnClickListener : Java.Lang.Object, View.IOnClickListener
-		{
-			public ExpandViewOnClickListener(Action action) : base()
-			{
-				_action = action;
-			}
-
-			private Action _action;
-
-			public void OnClick(View View)
-			{
-				_action.Invoke ();
-			}
+			_swipeView.ClearAnimation ();
+			_swipeView = null;
 		}
 #endregion
 

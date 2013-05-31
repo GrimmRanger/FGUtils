@@ -43,15 +43,12 @@ namespace FGUtilsDroid
 				view = inflator.Inflate (Resource.Layout.ExpandCollapseCell, null, false);
 			}
 
-			EnableExpandCollapse(view, position);
+			TextView title = view.FindViewById (Resource.Id.title) as TextView;
+			title.Text = string.Format ("row {0}", position);
+
 			EnableSwipeToDelete(view, position);
 
 			return view;
-		}
-
-		protected override View GetSwipeToDeleteView (View parent)
-		{
-			return parent.FindViewById (Resource.Id.swipeView);
 		}
 
 		protected override View GetExpandableView (View parent)
