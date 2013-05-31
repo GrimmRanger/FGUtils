@@ -82,17 +82,11 @@ namespace FGUtilsDroid
 
 		private bool ShouldDeleteSwipeView()
 		{
-			bool shouldDelete = false;
 			if (_swipeView != null) 
 			{
 				return Math.Abs (Offset) > DelThresh;
 			}
-			return shouldDelete;
-		}
-
-		private int SwipeAlpha()
-		{
-			return (int)(255 * (1 - (Offset/_swipeView.Width)));
+			return false;
 		}
 
 		protected void ActivateSwissListItem(View view, int position)
